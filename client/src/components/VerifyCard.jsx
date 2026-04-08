@@ -1,27 +1,15 @@
 import { useState } from "react";
-import { Shield, Copy, Check, Link2 } from "lucide-react";
+import { ShieldCheck, ShieldX, Copy, Check, Link2, Clock, User } from "lucide-react";
 
-function CopyButton({ text }) {
-  const [copied, setCopied] = useState(false);
-  function handleCopy() {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
-  }
+function CopyBtn({ text }) {
+  const [done, setDone] = useState(false);
   return (
-    <button className="btn-icon" onClick={handleCopy} style={{ fontSize: "0.65rem" }}>
-      {copied ? (
-        <>
-          <Check size={10} style={{ color: "var(--green)" }} />
-          Copied
-        </>
-      ) : (
-        <>
-          <Copy size={10} />
-          Copy
-        </>
-      )}
+    <button
+      className="btn-ghost"
+      onClick={() => navigator.clipboard.writeText(text).then(() => { setDone(true); setTimeout(() => setDone(false), 1400); })}
+      style={{ padding: "0.18rem 0.45rem", fontSize: "0.62rem" }}
+    >
+      {done ? <><Check size={9} style={{ color: "var(--matrix)" }} /> Copied</> : <><Copy size={9} /></>}
     </button>
   );
 }
@@ -30,145 +18,80 @@ export default function VerifyCard({ verifyResult }) {
   if (!verifyResult) return null;
 
   return (
-    <div className="card fade-in" style={{ padding: "1.25rem" }}>
+    <div className="card card-pad fade-in">
       {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "1rem",
-        }}
-      >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <Shield size={14} style={{ color: "var(--text-muted)" }} />
+          {verifyResult.exists
+            ? <ShieldCheck size={14} style={{ color: "var(--matrix)" }} />
+            : <ShieldX    size={14} style={{ color: "var(--red)" }} />
+          }
           <span
-            style={{
-              fontSize: "0.72rem",
-              fontWeight: 600,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "var(--text-muted)",
-            }}
+            className="font-display"
+            style={{ fontSize: "0.95rem", color: "var(--text-bright)", letterSpacing: "0.05em" }}
           >
-            Chain Verification
+            CHAIN VERIFICATION
           </span>
         </div>
-        <span className={verifyResult.exists ? "badge badge-ok" : "badge badge-err"}>
-          {verifyResult.exists ? "Verified" : "Not Found"}
+        <span className={verifyResult.exists ? "badge badge-new" : "badge badge-err"}>
+          {verifyResult.exists ? "✦ Verified" : "✗ Not Found"}
         </span>
       </div>
 
       {!verifyResult.exists ? (
         <div
           style={{
-            background: "rgba(229,56,59,0.05)",
-            border: "1px solid rgba(229,56,59,0.15)",
-            borderRadius: "var(--radius-sm)",
-            padding: "0.8rem 1rem",
-            fontSize: "0.8rem",
-            color: "var(--red)",
-            lineHeight: 1.5,
+            background: "var(--red-dim)", border: "1px solid rgba(255,51,102,0.18)",
+            borderRadius: "var(--r-sm)", padding: "0.85rem 1rem",
+            fontSize: "0.8rem", color: "var(--red)", lineHeight: 1.5,
           }}
         >
-          No on-chain crawl record found for this URL. The URL has not been
-          crawled and verified on Sepolia.
+          No on-chain crawl record found for this URL. Submit it for crawling to create an immutable blockchain record.
         </div>
       ) : (
         <>
-          {/* URL */}
-          <div style={{ marginBottom: "0.75rem" }}>
-            <div className="label">Verified URL</div>
+          <div style={{ marginBottom: "0.7rem" }}>
+            <div className="label"><Link2 size={9} /> Verified URL</div>
             <div
-              className="hash-display"
-              style={{
-                fontFamily: "var(--font-ui)",
-                fontSize: "0.8rem",
-                color: "var(--text-primary)",
-                wordBreak: "break-all",
-              }}
+              className="hash-box"
+              style={{ fontFamily: "var(--font-body)", fontSize: "0.8rem", color: "var(--text-primary)", wordBreak: "break-all" }}
             >
               {verifyResult.url}
             </div>
           </div>
 
-          {/* Hash */}
-          <div style={{ marginBottom: "0.75rem" }}>
+          <div style={{ marginBottom: "0.7rem" }}>
             <div className="label">Content Hash</div>
-            <div
-              className="hash-display"
-              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
-            >
-              <span
-                style={{
-                  flex: 1,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
+            <div className="hash-box" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {verifyResult.contentHash}
               </span>
-              <CopyButton text={verifyResult.contentHash} />
+              <CopyBtn text={verifyResult.contentHash} />
             </div>
           </div>
 
-          {/* Grid */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "0.6rem",
-            }}
-          >
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem", marginBottom: "1rem" }}>
             <div>
-              <div className="label">Crawler Address</div>
+              <div className="label"><User size={9} /> Crawler Address</div>
               <div
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "0.72rem",
-                  color: "var(--text-secondary)",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
+                className="font-mono"
+                style={{ fontSize: "0.7rem", color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
                 title={verifyResult.crawler}
               >
-                {verifyResult.crawler?.slice(0, 6)}...
-                {verifyResult.crawler?.slice(-4)}
+                {verifyResult.crawler?.slice(0, 8)}…{verifyResult.crawler?.slice(-6)}
               </div>
             </div>
             <div>
-              <div className="label">Recorded At</div>
-              <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+              <div className="label"><Clock size={9} /> Recorded</div>
+              <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>
                 {new Date(verifyResult.timestamp * 1000).toLocaleString()}
               </div>
             </div>
           </div>
 
-          {/* Chain indicator */}
-          <div
-            style={{
-              marginTop: "1rem",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              background: "var(--accent-glow)",
-              border: "1px solid var(--accent)",
-              borderRadius: "var(--radius-sm)",
-              padding: "0.55rem 0.8rem",
-            }}
-          >
-            <Link2 size={13} style={{ color: "var(--accent)" }} />
-            <span
-              style={{
-                fontSize: "0.72rem",
-                color: "var(--accent)",
-                fontWeight: 500,
-              }}
-            >
-              Immutably recorded on Ethereum Sepolia testnet
-            </span>
+          <div className="glow-pill">
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--signal)", boxShadow: "0 0 8px var(--signal)" }} />
+            Immutably recorded on Ethereum Sepolia
           </div>
         </>
       )}

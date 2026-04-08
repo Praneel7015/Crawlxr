@@ -1,35 +1,32 @@
 import { useState } from "react";
-import { FileText, Copy, Check, ExternalLink, ChevronDown, ChevronUp, Link as LinkIcon } from "lucide-react";
+import {
+  FileSearch, Copy, Check, ExternalLink,
+  ChevronDown, ChevronUp, Link2, Hash, Clock, User, Cpu,
+  TrendingUp
+} from "lucide-react";
 
-function CopyButton({ text }) {
-  const [copied, setCopied] = useState(false);
-  function handleCopy() {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
-  }
+function CopyBtn({ text, label = "" }) {
+  const [done, setDone] = useState(false);
   return (
-    <button className="btn-icon" onClick={handleCopy} style={{ fontSize: "0.65rem" }}>
-      {copied ? (
-        <>
-          <Check size={10} style={{ color: "var(--green)" }} />
-          Copied
-        </>
-      ) : (
-        <>
-          <Copy size={10} />
-          Copy
-        </>
-      )}
+    <button
+      className="btn-ghost"
+      onClick={() => navigator.clipboard.writeText(text).then(() => { setDone(true); setTimeout(() => setDone(false), 1400); })}
+      style={{ padding: "0.18rem 0.45rem", fontSize: "0.62rem" }}
+    >
+      {done
+        ? <><Check size={9} style={{ color: "var(--matrix)" }} /> Copied</>
+        : <><Copy size={9} /> {label}</>
+      }
     </button>
   );
 }
 
-function InfoRow({ label, children }) {
+function FieldRow({ icon: Icon, label, children }) {
   return (
-    <div style={{ marginBottom: "0.75rem" }}>
-      <div className="label">{label}</div>
+    <div style={{ marginBottom: "0.7rem" }}>
+      <div className="label">
+        <Icon size={9} />{label}
+      </div>
       {children}
     </div>
   );
@@ -37,259 +34,186 @@ function InfoRow({ label, children }) {
 
 export default function CrawlResultCard({ result, onCrawlLink }) {
   const [linksExpanded, setLinksExpanded] = useState(false);
-
   if (!result) return null;
 
-  const explorerBase =
-    import.meta.env.VITE_SEPOLIA_EXPLORER || "https://sepolia.etherscan.io/tx/";
-  const displayLinks = linksExpanded ? result.links : result.links?.slice(0, 5);
+  const explorerBase = import.meta.env.VITE_SEPOLIA_EXPLORER || "https://sepolia.etherscan.io/tx/";
+  const links = result.links ?? [];
+  const displayLinks = linksExpanded ? links : links.slice(0, 6);
 
   return (
-    <div className="card fade-in" style={{ padding: "1.25rem" }}>
+    <div className="card card-pad fade-in">
       {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "1rem",
-        }}
-      >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <FileText size={14} style={{ color: "var(--text-muted)" }} />
+          <FileSearch size={14} style={{ color: "var(--signal-dim)" }} />
           <span
-            style={{
-              fontSize: "0.72rem",
-              fontWeight: 600,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "var(--text-muted)",
-            }}
+            className="font-display"
+            style={{ fontSize: "0.95rem", color: "var(--text-bright)", letterSpacing: "0.05em" }}
           >
-            Crawl Result
+            CRAWL RESULT
           </span>
         </div>
         <span className={result.duplicate ? "badge badge-dup" : "badge badge-new"}>
-          {result.duplicate ? "Duplicate" : "New Crawl"}
+          {result.duplicate ? "⚡ Duplicate" : "✦ New Record"}
         </span>
       </div>
 
       {/* Page title */}
       {result.title && (
-        <InfoRow label="Page Title">
-          <div
-            style={{
-              fontSize: "0.85rem",
-              color: "var(--text-primary)",
-              fontWeight: 500,
-              lineHeight: 1.5,
-            }}
-          >
-            {result.title}
-          </div>
-        </InfoRow>
-      )}
-
-      <hr className="sep" />
-
-      {/* Content Hash */}
-      <InfoRow label="Content Hash (SHA-256)">
         <div
-          className="hash-display"
-          style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+          style={{
+            background: "var(--surface)", border: "1px solid var(--border)",
+            borderRadius: "var(--r-sm)", padding: "0.65rem 0.85rem",
+            fontWeight: 500, color: "var(--text-bright)", fontSize: "0.88rem",
+            lineHeight: 1.4, marginBottom: "0.85rem",
+          }}
         >
-          <span
-            style={{
-              flex: 1,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {result.contentHash}
-          </span>
-          <CopyButton text={result.contentHash} />
+          {result.title}
         </div>
-      </InfoRow>
-
-      {/* Transaction Hash */}
-      {result.transactionHash && (
-        <InfoRow label="Transaction Hash">
-          <div
-            className="hash-display"
-            style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
-          >
-            <a
-              href={`${explorerBase}${result.transactionHash}`}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                flex: 1,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                color: "var(--blue)",
-                textDecoration: "none",
-              }}
-            >
-              {result.transactionHash}
-            </a>
-            <CopyButton text={result.transactionHash} />
-            <a
-              href={`${explorerBase}${result.transactionHash}`}
-              target="_blank"
-              rel="noreferrer"
-              className="btn-icon"
-              style={{ textDecoration: "none" }}
-            >
-              <ExternalLink size={10} />
-              View
-            </a>
-          </div>
-        </InfoRow>
       )}
 
-      {/* Metadata grid */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "0.6rem",
-          marginBottom: "0.75rem",
-        }}
-      >
-        {result.crawler && (
-          <div>
-            <div className="label">Crawler Address</div>
-            <div
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "0.72rem",
-                color: "var(--text-secondary)",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-              title={result.crawler}
-            >
-              {result.crawler.slice(0, 6)}...{result.crawler.slice(-4)}
-            </div>
-          </div>
-        )}
-        {result.crawlerNodeId && (
-          <div>
-            <div className="label">Node ID</div>
-            <div
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "0.72rem",
-                color: "var(--text-secondary)",
-              }}
-            >
-              {result.crawlerNodeId}
-            </div>
-          </div>
-        )}
-        {result.blockchainTimestamp && (
-          <div>
-            <div className="label">On-chain Time</div>
-            <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
-              {new Date(result.blockchainTimestamp * 1000).toLocaleString()}
-            </div>
-          </div>
-        )}
-        {result.timestamp && (
-          <div>
-            <div className="label">Crawled At</div>
-            <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
-              {new Date(result.timestamp).toLocaleString()}
-            </div>
-          </div>
-        )}
-      </div>
+      {/* Transaction-style data grid */}
+      <div style={{ borderTop: "1px solid var(--border-dim)", paddingTop: "0.85rem" }}>
 
-      {/* Extracted links */}
-      {Array.isArray(result.links) && result.links.length > 0 && (
-        <>
-          <hr className="sep" />
-          <div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: "0.5rem",
-              }}
-            >
-              <div className="label" style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                <LinkIcon size={11} />
-                Extracted Links
-                <span
-                  style={{
-                    marginLeft: "0.25rem",
-                    color: "var(--accent)",
-                    fontFamily: "var(--font-mono)",
-                  }}
-                >
-                  {result.links.length}
-                </span>
+        <FieldRow icon={Hash} label="Content Hash (SHA-256)">
+          <div className="hash-box" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {result.contentHash}
+            </span>
+            <CopyBtn text={result.contentHash} />
+          </div>
+        </FieldRow>
+
+        {result.transactionHash && (
+          <FieldRow icon={TrendingUp} label="Blockchain TX">
+            <div className="hash-box" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <a
+                href={`${explorerBase}${result.transactionHash}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  flex: 1, overflow: "hidden", textOverflow: "ellipsis",
+                  whiteSpace: "nowrap", color: "var(--signal)", textDecoration: "none",
+                  fontSize: "0.7rem",
+                }}
+              >
+                {result.transactionHash}
+              </a>
+              <CopyBtn text={result.transactionHash} />
+              <a
+                href={`${explorerBase}${result.transactionHash}`}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-ghost"
+                style={{ textDecoration: "none", padding: "0.18rem 0.45rem", fontSize: "0.62rem" }}
+              >
+                <ExternalLink size={9} /> Etherscan
+              </a>
+            </div>
+          </FieldRow>
+        )}
+
+        {/* Meta grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem", marginBottom: "0.7rem" }}>
+          {result.crawler && (
+            <div>
+              <div className="label"><User size={9} /> Crawler</div>
+              <div
+                className="font-mono"
+                style={{ fontSize: "0.7rem", color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                title={result.crawler}
+              >
+                {result.crawler.slice(0, 8)}…{result.crawler.slice(-6)}
               </div>
-              {result.links.length > 5 && (
+            </div>
+          )}
+          {result.crawlerNodeId && (
+            <div>
+              <div className="label"><Cpu size={9} /> Node</div>
+              <div className="font-mono" style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>
+                {result.crawlerNodeId}
+              </div>
+            </div>
+          )}
+          {result.blockchainTimestamp && (
+            <div>
+              <div className="label"><Clock size={9} /> On-chain</div>
+              <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>
+                {new Date(result.blockchainTimestamp * 1000).toLocaleString()}
+              </div>
+            </div>
+          )}
+          {result.timestamp && (
+            <div>
+              <div className="label"><Clock size={9} /> Crawled</div>
+              <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>
+                {new Date(result.timestamp).toLocaleString()}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Chain verified pill */}
+        <div className="glow-pill" style={{ marginBottom: "0.85rem" }}>
+          <div
+            style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--signal)", boxShadow: "0 0 8px var(--signal)" }}
+          />
+          Immutably recorded on Ethereum Sepolia
+        </div>
+
+        {/* Links */}
+        {links.length > 0 && (
+          <div style={{ borderTop: "1px solid var(--border-dim)", paddingTop: "0.75rem" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+              <div className="label">
+                <Link2 size={9} />
+                Extracted Links
+                <span className="font-mono" style={{ color: "var(--signal)", marginLeft: "0.3rem" }}>{links.length}</span>
+              </div>
+              {links.length > 6 && (
                 <button
-                  className="btn-icon"
-                  onClick={() => setLinksExpanded((x) => !x)}
-                  style={{ fontSize: "0.65rem" }}
+                  className="btn-ghost"
+                  onClick={() => setLinksExpanded(x => !x)}
+                  style={{ fontSize: "0.62rem" }}
                 >
-                  {linksExpanded ? (
-                    <>
-                      <ChevronUp size={10} /> Show less
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown size={10} /> Show all {result.links.length}
-                    </>
-                  )}
+                  {linksExpanded
+                    ? <><ChevronUp size={9} /> Show less</>
+                    : <><ChevronDown size={9} /> Show all {links.length}</>
+                  }
                 </button>
               )}
             </div>
             <div
               style={{
-                background: "var(--bg-surface)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius-sm)",
-                padding: "0.3rem",
-                maxHeight: linksExpanded ? "220px" : "auto",
-                overflowY: linksExpanded ? "auto" : "visible",
+                background: "var(--surface)", border: "1px solid var(--border)",
+                borderRadius: "var(--r-sm)", padding: "0.3rem",
+                maxHeight: linksExpanded ? 240 : "auto", overflowY: linksExpanded ? "auto" : "visible",
               }}
             >
-              {displayLinks.map((link) => (
+              {displayLinks.map(link => (
                 <div
                   key={link}
                   className="link-item"
-                  style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "0.4rem" }}
-                  onClick={() => onCrawlLink && onCrawlLink(link)}
+                  style={{ cursor: "pointer" }}
+                  onClick={() => onCrawlLink?.(link)}
                   title={`Click to crawl: ${link}`}
                 >
-                  <LinkIcon size={9} style={{ flexShrink: 0, opacity: 0.5 }} />
+                  <Link2 size={8} style={{ flexShrink: 0, opacity: 0.4 }} />
                   <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{link}</span>
                 </div>
               ))}
             </div>
-            {!linksExpanded && result.links.length > 5 && (
+            {!linksExpanded && links.length > 6 && (
               <div
-                style={{
-                  fontSize: "0.65rem",
-                  color: "var(--text-muted)",
-                  marginTop: "0.3rem",
-                  textAlign: "right",
-                }}
+                className="font-mono"
+                style={{ fontSize: "0.58rem", color: "var(--text-muted)", marginTop: "0.25rem", textAlign: "right" }}
               >
-                +{result.links.length - 5} more links
+                +{links.length - 6} more — click "Show all"
               </div>
             )}
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
