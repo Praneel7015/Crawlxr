@@ -7,3 +7,4 @@ build/
 coverage/
 artifacts/
 cache/
+client/build_output.txt
