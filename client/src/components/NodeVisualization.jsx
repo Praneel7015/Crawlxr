@@ -636,7 +636,7 @@ export default function NodeVisualization() {
       <Legend graphData={visibleData} />
 
       {selectedNode && (
-        <div className="node-panel fade-in">
+        <div className="node-panel">
           <div
             style={{
               display: "flex",

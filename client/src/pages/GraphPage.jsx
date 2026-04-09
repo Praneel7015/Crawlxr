@@ -10,7 +10,7 @@ export default function GraphPage() {
           display: "flex",
           flexDirection: "column",
           gap: "0.75rem",
-          minHeight: "calc(100vh - 2rem)",
+          height: "calc(100vh - 2rem)",
         }}
       >
         {/* Page header */}
