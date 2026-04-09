@@ -6,15 +6,16 @@ export default function GraphPage() {
     <Layout>
       <div
         style={{
-          padding: "1rem 1.5rem 1.25rem",
+          padding: "1rem 1.5rem 1rem",
           display: "flex",
           flexDirection: "column",
           gap: "0.75rem",
-          height: "calc(100vh - 2rem)",
+          height: "100vh",
+          overflow: "hidden",
         }}
       >
         {/* Page header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingLeft: "5.5rem" }}>
           <div>
             <div
               className="font-display"
@@ -48,11 +49,12 @@ export default function GraphPage() {
           </div>
         </div>
 
-        {/* Graph */}
-        <div style={{ flex: 1, minHeight: 0 }}>
+        {/* Graph — fills ALL remaining space */}
+        <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
           <NodeVisualization />
         </div>
       </div>
     </Layout>
   );
 }
+

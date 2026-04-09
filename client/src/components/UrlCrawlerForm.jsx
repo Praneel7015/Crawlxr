@@ -48,27 +48,15 @@ export default function UrlCrawlerForm({ url, setUrl, onCrawl, onVerify, loading
       {/* Input row */}
       <div style={{ display: "flex", gap: "0.5rem", alignItems: "stretch" }}>
         <div style={{ flex: 1, position: "relative" }}>
-          {/* Protocol prefix */}
-          <span
-            className="font-mono"
-            style={{
-              position: "absolute", left: "0.8rem", top: "50%",
-              transform: "translateY(-50%)",
-              fontSize: "0.72rem", color: "var(--text-muted)",
-              pointerEvents: "none", userSelect: "none",
-            }}
-          >
-            https://
-          </span>
           <input
             type="text"
             className="input-field"
             value={url}
             onChange={handleChange}
             onKeyDown={handleKey}
-            placeholder="example.com/path"
+            placeholder="https://example.com/path"
             style={{
-              paddingLeft: "4.8rem",
+              padding: "0.6rem 0.8rem",
               borderColor: isValidUrl === false
                 ? "var(--red)"
                 : isValidUrl === true
