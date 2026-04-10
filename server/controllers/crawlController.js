@@ -7,6 +7,77 @@ const contractService = require("../blockchain/crawlerContractService");
 
 const rpcProvider = new ethers.JsonRpcProvider(process.env.RPC_URL);
 
+async function sendDuplicateCrawlResponse(res, url, onChainRecord) {
+  const prior = await CrawlRecord.findOne({ url }).sort({ crawledAt: -1 }).lean();
+
+  return res.status(200).json({
+    duplicate: true,
+    message: "URL already crawled on-chain",
+    url,
+    title: prior?.title || "N/A",
+    links: prior?.links || [],
+    contentHash: onChainRecord.contentHash,
+    transactionHash: prior?.txHash || null,
+    crawler: onChainRecord.crawler,
+    crawlerNodeId: prior?.crawlerNodeId || "unknown",
+    blockchainTimestamp: onChainRecord.timestamp,
+    timestamp: prior?.crawledAt || null,
+  });
+}
+
+async function handleClaimPreconditions(res, url) {
+  if (process.env.REQUIRE_NODE_REGISTRATION !== "true") {
+    return null;
+  }
+
+  await contractService.registerNodeIfRequired();
+  const claimResult = await contractService.claimTask(url);
+
+  if (claimResult.reason === "already-crawled") {
+    const latestOnChain = await contractService.verifyCrawl(url);
+    if (latestOnChain.exists) {
+      return sendDuplicateCrawlResponse(res, url, latestOnChain);
+    }
+  }
+
+  if (claimResult.reason === "already-claimed") {
+    return res.status(409).json({
+      duplicate: false,
+      message: "Crawl task already claimed by another node. Try again shortly.",
+      url,
+      claimer: claimResult.claimer || null,
+    });
+  }
+
+  return null;
+}
+
+async function addCrawlRecordWithConflictHandling(res, url, contentHashBytes32) {
+  try {
+    const tx = await contractService.addCrawlRecord(url, contentHashBytes32);
+    return { tx };
+  } catch (chainError) {
+    if (chainError.code === "URL_ALREADY_CRAWLED_ON_CHAIN") {
+      const latestOnChain = await contractService.verifyCrawl(url);
+      if (latestOnChain.exists) {
+        return { response: await sendDuplicateCrawlResponse(res, url, latestOnChain) };
+      }
+    }
+
+    if (chainError.code === "TASK_CLAIMED_BY_ANOTHER_NODE") {
+      return {
+        response: res.status(409).json({
+          duplicate: false,
+          message: "Crawl task claimed by another node. Retry later.",
+          url,
+        }),
+      };
+    }
+
+    throw chainError;
+  }
+}
+
 /* ── POST /api/crawl ─────────────────────────────────── */
 async function crawl(req, res, next) {
   try {
@@ -15,32 +86,23 @@ async function crawl(req, res, next) {
 
     const existing = await contractService.verifyCrawl(url);
     if (existing.exists) {
-      const prior = await CrawlRecord.findOne({ url }).sort({ crawledAt: -1 }).lean();
-      return res.status(200).json({
-        duplicate: true,
-        message: "URL already crawled on-chain",
-        url,
-        title: prior?.title || "N/A",
-        links: prior?.links || [],
-        contentHash: existing.contentHash,
-        transactionHash: prior?.txHash || null,
-        crawler: existing.crawler,
-        crawlerNodeId: prior?.crawlerNodeId || "unknown",
-        blockchainTimestamp: existing.timestamp,
-        timestamp: prior?.crawledAt || null,
-      });
+      return sendDuplicateCrawlResponse(res, url, existing);
     }
 
     const page = await crawlService.crawlUrl(url);
     const contentHash = hashService.sha256(page.html);
     const contentHashBytes32 = hashService.toBytes32(contentHash);
 
-    if (process.env.REQUIRE_NODE_REGISTRATION === "true") {
-      await contractService.registerNodeIfRequired();
-      await contractService.claimTask(url);
+    const claimResponse = await handleClaimPreconditions(res, url);
+    if (claimResponse) {
+      return claimResponse;
     }
 
-    const tx = await contractService.addCrawlRecord(url, contentHashBytes32);
+    const chainWrite = await addCrawlRecordWithConflictHandling(res, url, contentHashBytes32);
+    if (chainWrite.response) {
+      return chainWrite.response;
+    }
+    const tx = chainWrite.tx;
 
     const record = await CrawlRecord.create({
       url,

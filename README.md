@@ -19,6 +19,7 @@ bc/
 ## Features
 
 - Crawl URL, extract title and links (`POST /api/crawl`)
+- Dynamic link extraction fallback for JS-heavy pages using headless rendering (Playwright)
 - Generate SHA256 content hash
 - Store crawl proof on chain (`url + hash + timestamp + crawler`)
 - Blockchain duplicate prevention (won't recrawl already stored URL)
@@ -78,6 +79,11 @@ Set in `server/.env`:
 - `CRAWLER_CONTRACT_ADDRESS` (from deployment)
 - `REQUIRE_NODE_REGISTRATION=true|false`
 - `CRAWLER_NODE_ID=node-1`
+- `BROWSER_CRAWL_ENABLED=true|false` (JS-rendered crawl fallback)
+- `CRAWL_STATIC_TIMEOUT_MS=30000`
+- `CRAWL_BROWSER_TIMEOUT_MS=45000`
+- `CRAWL_BROWSER_WAIT_MS=6000`
+- `CRAWL_MAX_LINKS=100`
 
 Run:
 
@@ -148,4 +154,5 @@ Returns blockchain verification payload (`exists`, `contentHash`, `timestamp`, `
 
 - The server signs crawl transactions using `PRIVATE_KEY` from `server/.env`.
 - If `REQUIRE_NODE_REGISTRATION=true`, the backend wallet auto-registers node and claims task before adding crawl record.
+- JS-only pages can be crawled via Playwright fallback when `BROWSER_CRAWL_ENABLED=true`.
 - IPFS support can be added by storing full HTML in IPFS and writing only CID hash on-chain.
