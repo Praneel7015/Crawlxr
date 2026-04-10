@@ -1,52 +1,60 @@
-import { useState } from "react";
-import { BrowserProvider } from "ethers";
 import Layout from "../components/Layout";
 import NodeVisualization from "../components/NodeVisualization";
 
 export default function GraphPage() {
-  const [walletAddress, setWalletAddress] = useState("");
-
-  async function connectWallet() {
-    try {
-      if (!window.ethereum) return;
-      const provider = new BrowserProvider(window.ethereum);
-      const accounts = await provider.send("eth_requestAccounts", []);
-      setWalletAddress(accounts[0] || "");
-    } catch {
-      // silently fail
-    }
-  }
-
   return (
-    <Layout walletAddress={walletAddress} onConnectWallet={connectWallet}>
-      <div style={{ padding: "1rem 1.5rem" }}>
+    <Layout>
+      <div
+        style={{
+          padding: "1rem 1.5rem 1rem",
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.75rem",
+          height: "100vh",
+          overflow: "hidden",
+        }}
+      >
         {/* Page header */}
-        <div style={{ marginBottom: "1rem" }}>
-          <h1
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, paddingLeft: "5.5rem" }}>
+          <div>
+            <div
+              className="font-display"
+              style={{ fontSize: "1.35rem", color: "var(--text-bright)", letterSpacing: "0.06em" }}
+            >
+              SIGNAL GRAPH
+            </div>
+            <div className="font-mono" style={{ fontSize: "0.62rem", color: "var(--text-muted)", marginTop: "0.1rem" }}>
+              3D force-directed map · domain coloring · blockchain-verified nodes
+            </div>
+          </div>
+          <div
+            className="hide-mobile"
             style={{
-              fontSize: "1.1rem",
-              fontWeight: 600,
-              color: "var(--text-bright)",
-              margin: "0 0 0.25rem 0",
+              display: "flex", gap: "1.25rem",
+              background: "var(--card)", border: "1px solid var(--border)",
+              borderRadius: "var(--r-md)", padding: "0.5rem 1rem",
             }}
           >
-            Link Graph
-          </h1>
-          <p
-            style={{
-              fontSize: "0.78rem",
-              color: "var(--text-muted)",
-              margin: 0,
-            }}
-          >
-            3D visualization of crawled URLs and their connections. Click any
-            node to view details.
-          </p>
+            {[
+              ["Drag", "Rotate"],
+              ["Scroll", "Zoom"],
+              ["Click", "Details"],
+              ["/ Search", "Filter nodes"],
+            ].map(([k, v]) => (
+              <div key={k} style={{ textAlign: "center" }}>
+                <div className="font-mono" style={{ fontSize: "0.6rem", color: "var(--signal)", marginBottom: "0.1rem" }}>{k}</div>
+                <div className="font-mono" style={{ fontSize: "0.58rem", color: "var(--text-muted)" }}>{v}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Graph */}
-        <NodeVisualization />
+        {/* Graph — fills ALL remaining space */}
+        <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+          <NodeVisualization />
+        </div>
       </div>
     </Layout>
   );
 }
+

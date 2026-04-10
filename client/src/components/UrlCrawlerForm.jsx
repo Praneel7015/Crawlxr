@@ -1,121 +1,136 @@
-import { Search, ArrowRight, ShieldCheck } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, ShieldCheck, Plus, Loader } from "lucide-react";
 
-export default function UrlCrawlerForm({ url, setUrl, onCrawl, onVerify, loading }) {
+export default function UrlCrawlerForm({ url, setUrl, onCrawl, onVerify, loading, onAddToQueue }) {
+  const [isValidUrl, setIsValidUrl] = useState(null);
+
+  function handleChange(e) {
+    const val = e.target.value;
+    setUrl(val);
+    if (!val.trim()) { setIsValidUrl(null); return; }
+    try { new URL(val.startsWith("http") ? val : `https://${val}`); setIsValidUrl(true); }
+    catch { setIsValidUrl(false); }
+  }
+
   function handleKey(e) {
     if (e.key === "Enter" && !loading) onCrawl();
   }
 
+  const normalizedUrl = url.trim()
+    ? (url.startsWith("http") ? url : `https://${url}`)
+    : "";
+
+  const canSubmit = !loading && url.trim() && isValidUrl !== false;
+
   return (
-    <div className="card" style={{ padding: "1.5rem" }}>
-      {/* Title row */}
-      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            background: "var(--accent-glow)",
-            border: "1px solid var(--accent)",
-            borderRadius: 8,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-            color: "var(--accent)",
-          }}
-        >
-          <Search size={15} />
-        </div>
+    <div className="card card-pad">
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
         <div>
           <div
-            style={{
-              fontSize: "0.9rem",
-              fontWeight: 600,
-              color: "var(--text-bright)",
-              letterSpacing: "-0.01em",
-            }}
+            className="font-display"
+            style={{ fontSize: "1.15rem", color: "var(--text-bright)", letterSpacing: "0.05em" }}
           >
-            Crawl a URL
+            CRAWL TARGET
           </div>
-          <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: 1 }}>
-            Content is hashed and stored on Ethereum Sepolia
+          <div className="font-mono" style={{ fontSize: "0.62rem", color: "var(--text-muted)", marginTop: "0.1rem" }}>
+            URL HASHED · SHA-256 · STORED ON SEPOLIA
           </div>
         </div>
+        {loading && (
+          <div className="badge badge-live" style={{ gap: "0.4rem" }}>
+            <Loader size={9} style={{ animation: "spin 1s linear infinite" }} />
+            Crawling
+          </div>
+        )}
       </div>
 
-      {/* Input + buttons */}
-      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+      {/* Input row */}
+      <div style={{ display: "flex", gap: "0.5rem", alignItems: "stretch" }}>
         <div style={{ flex: 1, position: "relative" }}>
-          <span
-            style={{
-              position: "absolute",
-              left: "0.75rem",
-              top: "50%",
-              transform: "translateY(-50%)",
-              fontFamily: "var(--font-mono)",
-              fontSize: "0.75rem",
-              color: "var(--text-muted)",
-              pointerEvents: "none",
-              userSelect: "none",
-            }}
-          >
-            https://
-          </span>
           <input
-            id="crawl-url-input"
-            type="url"
+            type="text"
             className="input-field"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={handleChange}
             onKeyDown={handleKey}
-            placeholder="example.com"
-            style={{ paddingLeft: "4.5rem" }}
+            placeholder="https://example.com/path"
+            style={{
+              padding: "0.6rem 0.8rem",
+              borderColor: isValidUrl === false
+                ? "var(--red)"
+                : isValidUrl === true
+                ? "var(--border-bright)"
+                : undefined,
+            }}
             spellCheck={false}
             autoComplete="off"
+            aria-label="URL to crawl"
           />
+          {/* Validity indicator */}
+          {isValidUrl !== null && (
+            <span
+              style={{
+                position: "absolute", right: "0.75rem", top: "50%",
+                transform: "translateY(-50%)",
+                width: 6, height: 6, borderRadius: "50%",
+                background: isValidUrl ? "var(--matrix)" : "var(--red)",
+                boxShadow: isValidUrl ? "0 0 6px var(--matrix)" : "0 0 6px var(--red)",
+              }}
+            />
+          )}
         </div>
 
-        <button id="crawl-btn" className="btn-primary" onClick={onCrawl} disabled={loading || !url.trim()}>
-          {loading ? (
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span className="dot-pulse" style={{ display: "inline-flex", gap: 3 }}>
-                <span style={{ width: 4, height: 4 }} />
-                <span style={{ width: 4, height: 4, margin: 0 }} />
-                <span style={{ width: 4, height: 4 }} />
-              </span>
-              Crawling
-            </span>
-          ) : (
-            <span style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-              <ArrowRight size={14} />
-              Crawl
-            </span>
-          )}
+        <button
+          className="btn-primary"
+          onClick={onCrawl}
+          disabled={!canSubmit}
+          title="Crawl URL (Enter)"
+          style={{ minWidth: 100 }}
+        >
+          {loading
+            ? <><div className="dot-pulse"><span/><span/><span/></div> Crawling</>
+            : <><ArrowRight size={14} /> Crawl</>
+          }
         </button>
 
-        <button id="verify-btn" className="btn-secondary" onClick={onVerify} disabled={loading || !url.trim()}>
-          <span style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-            <ShieldCheck size={14} />
-            Verify
-          </span>
+        <button
+          className="btn-secondary"
+          onClick={onVerify}
+          disabled={!canSubmit}
+          title="Verify on blockchain"
+          style={{ minWidth: 90 }}
+        >
+          <ShieldCheck size={14} /> Verify
         </button>
+
+        {onAddToQueue && (
+          <button
+            className="btn-ghost"
+            onClick={() => onAddToQueue(normalizedUrl)}
+            disabled={!canSubmit}
+            title="Add to queue"
+            style={{ padding: "0 0.65rem" }}
+          >
+            <Plus size={14} />
+          </button>
+        )}
       </div>
 
       {/* Progress bar */}
-      {loading && <div className="progress-bar" style={{ marginTop: "0.75rem" }} />}
+      {loading && <div className="progress-bar" style={{ marginTop: "0.65rem" }} />}
 
-      {/* Hint */}
+      {/* Hints */}
       <div
+        className="font-mono"
         style={{
-          marginTop: "0.75rem",
-          fontSize: "0.68rem",
-          color: "var(--text-muted)",
-          display: "flex",
-          gap: "1.25rem",
+          display: "flex", gap: "1.5rem", marginTop: "0.65rem",
+          fontSize: "0.58rem", color: "var(--text-muted)",
         }}
       >
-        <span>Press Enter to crawl</span>
-        <span>SHA-256 content hash</span>
-        <span>EVM duplicate detection</span>
+        <span>↵ Enter to crawl</span>
+        <span>Duplicates detected on-chain</span>
+        <span>Max 100 links extracted</span>
       </div>
     </div>
   );
